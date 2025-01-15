@@ -79,18 +79,31 @@ class Unembeding(nn.Module):
         x += self.b_U
         return x
 
-class LayerNorm:
-    pass
+class LayerNorm(nn.Module):
+    def __init__(self, d_model):
+        super().__init__()
+        self.eps = 1e-5
+        self.beta = nn.Parameter(torch.randn(d_model))
+        self.gamma = nn.Parameter(torch.rand(1))
+
+    def forward(self, x):
+        mean = x.mean(dim=-1, keepdim=True)
+        std = x.std(dim=-1, keepdim=True)
+        norm_x = (x - mean) / (std + self.eps) 
+        return (norm_x - self.beta) / (self.gamma + self.eps)
 
 class Layer(nn.Module):
     def __init__(self, args):
         super().__init__()
+        self.ln1 = LayerNorm(args.d_model)
         self.attn = SelfAttn(args.d_model, args.d_head, args.n_head)
+        self.ln2 = LayerNorm(args.d_model)
         self.mlp = MLP(args.d_model, args.d_mlp)
 
     def forward(self, x):
-        x = self.attn(x)
-        x = self.mlp(x)
+
+        x = self.attn(self.ln1(x))
+        x = self.mlp(self.ln2(x))
         return x
     
 class ModelArgs:
@@ -133,6 +146,12 @@ output = model(x)
 output.shape
 # %%
 
+data = 
+# %%
+class TrainArgs:
+    n_epoch = 5
+    lr = 1e-3
+
 def train(model, args):
-    pass
+    
 # %%
